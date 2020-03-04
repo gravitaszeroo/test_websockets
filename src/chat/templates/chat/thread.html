@@ -1,3 +1,5 @@
+
+<!-- Vishnu - this is all boiler plate code that came with the demo. It is very similar to how you can reference python values within a flask app-->
 {% extends "base.html" %}
 
 {% block content %}
@@ -11,6 +13,7 @@
 </ul>
 
 <form id='form' method='POST'> {% csrf_token %}
+    <input type='hidden' id='myUsername' value='{{ user.username }}' />
 {{form.as_p }}
 <input type='submit' class='btn btn-primary'/>
 </form>
@@ -19,8 +22,118 @@
 
 {% block script %}
 
+
+<!-- Vishnu: This is boiler plate code we are using to have Reconnecting Web Sockets online
+This is helpful because this allows us to have the browser reconnect to the server if the server goes offline or if your browser
+disconnects from the internet-->
+<script src='https://cdnjs.cloudflare.com/ajax/libs/reconnecting-websocket/1.0.0/reconnecting-websocket.js'></script>
+
+
+<!-- Vishnu: This is the Javascript code that actually handles the websocket events. Its not too bad I'll comment stuff below-->
 <script>
-// websocket scripts
+
+// Asssinging attributes of the browser window to the loc variable
+var loc = window.location
+
+// Refering out form above where we submit data.
+// With the $("# ") format, you can pull out HTML ID's and assign them to Javascript variables
+var formData = $("#form")
+//refering the input message field
+var msgInput = $("#id_message")
+//isolating the chat box as an element/variable
+var chatHolder = $("#chat-items")
+//isolating my username as a variable
+var me = $("#myUsername").val()
+
+
+
+
+//Web Sockets do not use HTTP: its a different protocol
+// because of this, websockets will use ws:// to singal we are using the websocket protocol
+var wsStart = 'ws://' 
+
+
+// this is a logic check to determine if the current sessions is HTTPS (like if we are on Heroku)
+// If we are on an SSL HTTPS website, it will change to the WSS secure flag of wss://
+if (loc.protocol == 'https:'){
+    wsStart = 'wss://'
+}
+
+
+// This creates an endpoint that the websockets will comunicate through.
+// This is the ws:// protocol flag, plus the domain we are on, plus the fill domain path
+// so an example would be ws://localhost/messages/vishnu
+var endpoint = wsStart + loc.host + loc.pathname
+
+
+//This is calling the Reconnecting Websocket Object and assigning it as a socket to an endpoint
+var socket = new ReconnectingWebSocket(endpoint)
+
+//NOTE: This was one of the last thigns I put into the code, prior to this I used a generic WebSocket code
+//Leaving it here in case you are getting too many spams of reconnecting while you test code
+//var socket == new WebSocket(endpoint)
+
+//Another Note - a lot of Javascript variables are case sensitive, so be careful!
+// Websocket(endpoint) will not work, it must be WebSocket(endpoint)
+
+
+
+//Vishnu - The socket calls below that end this .html and javascript code are
+// Events that handle Websockets on the browser.
+
+
+//This event is for when a message is sent on client
+socket.onmessage = function(e){
+    //the console.log file is very handy if you want to view the console feature in the browser to monitor events
+    console.log("On Message",e)
+
+    //We take data field from the websockets event and parse out json
+    var chatDataMsg = JSON.parse(e.data)
+    //This deconstructs the JSON object of who sent a message and what the message was
+    //and adds it to the front end of the website
+    chatHolder.append("<li>" + chatDataMsg.message + " via " + chatDataMsg.username + "</li>")
+}
+
+//Socket events upon connecting
+socket.onopen = function(e){
+    console.log("open",e)
+    formData.submit(function(event){
+        //We are preventing the default action of submitting the form!
+        // This is done to make sure that we are getting values to send to the server
+        // and not just reply back locally
+        event.preventDefault()
+
+
+        //Parsing out the message typed in the field and assiging it to a variabel
+        var msgText = msgInput.val()
+        
+        //No longer needed with websockets online
+        //chatHolder.append("<li>"+ msgText + " via " + me + "</li>")
+
+        //Example of adding another string response
+        //var formDataSerialized = formData.serialize()
+        //socket.send(formDataSerialized)
+
+
+        //examnple on how to send a dictionary back
+        var finalData = {
+            'message': msgText
+        }
+
+        //The dictionary is wrapped in JSON.stringify, then sent.
+        socket.send(JSON.stringify(finalData))
+
+        //wipes the input field on the HTML form.
+        formData[0].reset()
+    })
+}
+socket.onerror = function(e){
+    //Handy to just see when errors are being thrown
+    console.log("error",e)
+}
+socket.onclose = function(e){
+    console.log("close",e)
+}
 
 </script>
 {% endblock %}

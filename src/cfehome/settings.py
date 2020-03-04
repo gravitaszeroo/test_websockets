@@ -30,6 +30,9 @@ ALLOWED_HOSTS = ['*']
 
 # Application definition
 
+# Vishnu: 
+# Channels is imported to use django channels
+# chat is the name of this dummy app
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -37,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'channels',
     'chat',
 ]
 
@@ -51,6 +55,15 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'cfehome.urls'
+
+
+#Vishnu: for this dummy project, 'cfehome' was the project name
+#for our project we'll want to probably swap out to our own project name
+#Django Channels moves away from WSGI (default django, HTTP packets)
+#to ASGI - Asyncronous - Web Sockets!
+#Because of this we need to change point to the correct application type of
+#'ASGI_APPLICATRION'
+ASGI_APPLICATION = "cfehome.routing.application"
 
 TEMPLATES = [
     {
@@ -68,6 +81,8 @@ TEMPLATES = [
     },
 ]
 
+
+#Vishnu: For reference, this is what the old/default Django WSGI application will look like.
 WSGI_APPLICATION = 'cfehome.wsgi.application'
 
 
@@ -119,3 +134,24 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
 
 STATIC_URL = '/static/'
+
+
+
+
+
+#Vishnu - This is directly from the Django Channels Documentation for setup
+#The comment code nested within here should be used INSTEAD if this is to be deployed on Heroku.
+#I only got this implementation online locally so it may need a slight tinker, but this links
+#the REDIS_URL env variable to where Heorku will host it to.
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("localhost", 6379)],
+            
+            
+            #USE THIS ONE FOR HEROKU!
+            #"hosts": [os.enviorn.get('REDIS_URL', 'redis://localhost:6379')],
+        },
+    },
+}

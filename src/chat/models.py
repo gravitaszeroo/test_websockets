@@ -4,7 +4,10 @@ from django.conf import settings
 from django.db import models
 from django.db.models import Q
 
-
+#Vishnu: 
+#So for this chat application - thread Manager serves as the unique identifier for a "chat room"
+#This application has a chat between two useres, which is based on who the first and second user in the chat are.
+#For our project we'll want to change the thread management so each room has its own chat.
 class ThreadManager(models.Manager):
     def by_user(self, user):
         qlookup = Q(first=user) | Q(second=user)
@@ -36,6 +39,10 @@ class ThreadManager(models.Manager):
             return None, False
 
 
+#Vishnu: 
+#A given thread has two key values, the first user and the second user
+#the updated field automatically populates with the last time the thread was chatted in
+#same t hing for timestamp (Timestamp is not used for this demo), its a placeholder for the admin panel
 class Thread(models.Model):
     first        = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='chat_thread_first')
     second       = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='chat_thread_second')
@@ -55,6 +62,8 @@ class Thread(models.Model):
         return False
 
 
+#Vishnu:
+#This model will be the Database Model in which chat messages are stored - seen within the Controller.
 class ChatMessage(models.Model):
     thread      = models.ForeignKey(Thread, null=True, blank=True, on_delete=models.SET_NULL)
     user        = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name='sender', on_delete=models.CASCADE)
